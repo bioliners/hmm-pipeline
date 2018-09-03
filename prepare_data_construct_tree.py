@@ -1,13 +1,15 @@
-from subprocessRun import runSubProcess
+from util import *
 import re
 import numpy as np
 import sys, getopt
 from Bio import SeqIO
+import logging
 
 USAGE = '''
-	This script runs psi-blast with specified e-value and etracts sequences from the iteration with max number of hits,
-	 
-	''' + "python" + sys.argv[0] + '''
+This script runs psi-blast with specified e-value and etracts sequences from the iteration with max number of hits
+
+python ''' + sys.argv[0] + '''
+
 -i || --input                  -input file with protein sequence
 [-o || --psiblastout]          -output file with psi-blast result  
 [-n || --psiblast_max_out]     -output file with the part of psi-blast result, containing all the hits from the iteration 
@@ -22,6 +24,19 @@ USAGE = '''
 [-l || --psiblast]             -full path to psiblast program
 [-c || --blastdbcmd]           -full path to blastdbcmd program
 '''
+
+LOGGER = logging.getLogger('prepare_data_construct_tree')
+LOGGER.setLevel(logging.DEBUG)
+
+fh = logging.FileHandler('hmm_pipeline.log')
+fh.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+LOGGER.addHandler(fh)
+LOGGER.addHandler(ch)
 
 #global variables
 PSIBLAST_INPUT = "protein.fa"
@@ -39,10 +54,11 @@ BLASTDBCMD = "blastdbcmd"
 PROTEIN_SEQUENCES = "protein_sequences.fa"
 ALIGNED_REGIONS_OUTPUT = "aligned_regions_out.fasta"
 
-def initialyze(argv):
+def initialize(argv):
 	global PSIBLAST_INPUT, PSIBLAST_OUTPUT, PSIBLAST_OUTPUT_MAX_HITS, REFSEQS_OUTPUT, PROTEIN_SEQUENCES, ALIGNED_REGIONS_OUTPUT
 	global PSI_ROUNDS, MAX_TARGET_SEQS, EVAL_TRESHOLD
 	global BLAST_DB_PATH, PSIBLAST, BLASTDBCMD
+	LOGGER.info('Initializing parameters') 
 	try:
 		opts, args = getopt.getopt(argv[1:],"hi:o:n:t:k:s:r:m:e:b:l:c",["input=", "psiblastout=", "psiblast_max_out=", \
 		"refseqs_out=", "protens_out=", "aligned_out=", "iteration=", "max_target_seq=", "evalue=", "blastdb_path=", \
@@ -50,7 +66,7 @@ def initialyze(argv):
 		if len(opts) == 0:
 			raise getopt.GetoptError("Options are required\n")
 	except getopt.GetoptError as e:
-		print "===========ERROR==========\n " + str(e) + USAGE
+		LOGGER.error("===========ERROR==========\n " + str(e) + USAGE)
 		sys.exit(2)
 	for opt, arg in opts:
 		if opt == '-h':
@@ -80,11 +96,12 @@ def initialyze(argv):
 			PSIBLAST = str(arg).strip()
 		elif opt in ("-c", "--blastdbcmd"):
 			BLASTDBCMD = str(arg).strip()
-		
 
 def identify_longest_iteration():
 	#identify every iteration in the psi-blast output, find the one with most hits, and extract all protein names in 
 	#one file and extract the subset of psi-blast run with max number of hits to a separate file
+	LOGGER.info('Identifying the longest psiblast iteration')
+	psiblast() 
 	with open(PSIBLAST_OUTPUT, 'r') as psi_result:
 		header_match = re.findall(r"# (.*) hits found", psi_result.read())
 		header_match2 = map(int, header_match)
@@ -106,6 +123,7 @@ def identify_longest_iteration():
 						break
 			
 def extract_aligned_regions():
+	LOGGER.info('Extracting aligned regions') 
 	blastdbcmd()
 	refSeqToCoords = dict()
 	with open(PSIBLAST_OUTPUT_MAX_HITS, 'r') as psi_max_hits, open(ALIGNED_REGIONS_OUTPUT, 'w') as aligned_regions:
@@ -119,7 +137,7 @@ def extract_aligned_regions():
 			start = refSeqToCoords[refseqId][0] - 1
 			end = refSeqToCoords[refseqId][1] - 1
 			coveredPart = str(record.seq[start:end+1])			
-			aligned_regions.write(">" + record.description + "\n")
+			aligned_regions.write(">" + prepareNames(record.description) + "\n")
 			aligned_regions.write(coveredPart+ "\n")
 
 #In production psi-blast input file name will be provided as parameter 
@@ -128,18 +146,17 @@ def psiblast():
 	psiblast_commandline = '{0} -db {1} -outfmt 7 -query {2} -out {3} -num_iterations {4} ' \
 	'-max_target_seqs {5} -evalue {6}'.format(PSIBLAST, BLAST_DB_PATH, PSIBLAST_INPUT, PSIBLAST_OUTPUT,  \
 	PSI_ROUNDS, MAX_TARGET_SEQS, EVAL_TRESHOLD)
-	print psiblast_commandline
+	LOGGER.info('Launching psiblast : \n' + psiblast_commandline) 
 	runSubProcess(psiblast_commandline)
 
 def blastdbcmd():
 	blastdbcmd_commandline = '{0} -entry_batch {1} -db {2} -outfmt "%f" -out {3}' \
 	.format(BLASTDBCMD, REFSEQS_OUTPUT, BLAST_DB_PATH, PROTEIN_SEQUENCES)
-	print blastdbcmd_commandline
+	LOGGER.info('Launching blastdbcmd : \n' + blastdbcmd_commandline) 
 	runSubProcess(blastdbcmd_commandline)
-		
+	
 def main(argv):
-	#initialize(argv)
-	#psiblast()
+	initialize(argv)
 	identify_longest_iteration()
 	extract_aligned_regions()
 	
