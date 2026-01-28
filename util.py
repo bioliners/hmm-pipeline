@@ -1,8 +1,8 @@
-from subprocess import Popen, call
-import traceback, re
-import logging
+from subprocess import Popen, run, CalledProcessError
+import re
+import logging, time
 
-MODULE_LOGGER = logging.getLogger('prepare_data_construct_tree.util')
+MODULE_LOGGER = logging.getLogger('psi_blast_getmax.util')
 
 REGEX_VOID = re.compile(r"(\(|\)|:|,|}|{|'|/|]|\[|\\)")
 REGEX_UNDERSCORE = re.compile(r"( |\|)")
@@ -14,24 +14,31 @@ def prepareNames(line):
 	return REGEX_UNDERSCORE.sub(REGEX_UNDERSCORE_SUBST, line)
 	
 def runSubProcess(command):
-	try:
-		call(command, shell=True)
-	except OSError, osError:
-		MODULE_LOGGER.error("osError " + osError)
-		MODULE_LOGGER.error(traceback.print_exc())
-	except Exception, e:
-		MODULE_LOGGER.error(traceback.print_exc())
+    try:
+        run(command, shell=True, check=True)
+    except CalledProcessError:
+        MODULE_LOGGER.exception("Subprocess failed")
+    except Exception:
+        MODULE_LOGGER.exception("Unexpected error")
 		
-def runSubProcessWithCheck(command, processName):
-	try:
-		proc = Popen(command, shell=True)
-		status = proc.poll()
-		while status == None:
-			MODULE_LOGGER.info("Still runnig " + processName)
-			status = proc.poll()
-		MODULE_LOGGER.info("Seems like finished " + processName + " " + str(status))
-	except OSError, osError:
-		MODULE_LOGGER.error("osError " + osError)
-		MODULE_LOGGER.error(traceback.print_exc())
-	except Exception, e:
-		MODULE_LOGGER.error(traceback.print_exc())
+def runSubProcessWithCheck(command, processName, poll_interval=1.0):
+    try:
+        proc = Popen(command, shell=True)
+
+        while True:
+            status = proc.poll()
+            if status is not None:
+                break
+            MODULE_LOGGER.info("Still running %s", processName)
+            time.sleep(poll_interval)
+
+        MODULE_LOGGER.info("Seems like finished %s %s", processName, status)
+        return status
+
+    except OSError:
+        MODULE_LOGGER.exception("OSError while running process %s", processName)
+        raise
+
+    except Exception:
+        MODULE_LOGGER.exception("Unexpected error while running process %s", processName)
+        raise

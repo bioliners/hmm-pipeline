@@ -70,7 +70,7 @@ def initialize(argv):
 		sys.exit(2)
 	for opt, arg in opts:
 		if opt == '-h':
-			print USAGE
+			print (USAGE)
 			sys.exit()
 		elif opt in ("-i", "--input"):
 			PSIBLAST_INPUT = str(arg).strip()
