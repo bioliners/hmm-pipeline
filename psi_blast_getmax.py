@@ -60,7 +60,7 @@ def initialize(argv):
 	global BLAST_DB_PATH, PSIBLAST, BLASTDBCMD
 	LOGGER.info('Initializing parameters') 
 	try:
-		opts, args = getopt.getopt(argv[1:],"hi:o:n:t:k:s:r:m:e:b:l:c",["input=", "psiblastout=", "psiblast_max_out=", \
+		opts, args = getopt.getopt(argv[1:],"hi:o:n:t:k:a:r:m:e:b:l:c",["input=", "psiblastout=", "psiblast_max_out=", \
 		"refseqs_out=", "protens_out=", "aligned_out=", "iteration=", "max_target_seq=", "evalue=", "blastdb_path=", \
 		"psiblast=", "blastdbcmd="])
 		if len(opts) == 0:
@@ -82,7 +82,7 @@ def initialize(argv):
 			REFSEQS_OUTPUT = str(arg).strip()
 		elif opt in ("-k", "--protens_out"):
 			PROTEIN_SEQUENCES = str(arg).strip()
-		elif opt in ("-s", "--aligned_out"):
+		elif opt in ("-a", "--aligned_out"):
 			ALIGNED_REGIONS_OUTPUT = str(arg).strip()   
 		elif opt in ("-r", "--iteration"):
 			PSI_ROUNDS = int(arg) 

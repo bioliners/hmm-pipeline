@@ -1,0 +1,16 @@
+
+-i || --input                  -input file with protein sequence
+[-o || --psiblastout]          -output file with psi-blast result  
+[-n || --psiblast_max_out]     -output file with the part of psi-blast result, containing all the hits from the iteration 
+								with max number of hits
+[-t || --refseqs_out]		   -output file with refesqs extracted from the psiblast iteration with max numbe rof hits
+[-k || --protens_out]          -output file with protien sequences corresponding to the iteration with the max numbe rof hits
+[-a || --aligned_out]          -output file with the protions of protein sequences corresponding to the aligned part in psiblast run 
+[-r || --iteration]            -number of psiblast iteration to run
+[-m || --max_target_seq]       -maximum number of sequences resulting from psiblast run to keep 
+[-e || --evalue]               -evalue threashold to save hits
+[-b || --blastdb_path]         -full path to blast protein refseq database
+[-l || --psiblast]             -full path to psiblast program
+[-c || --blastdbcmd]           -full path to blastdbcmd program
+
+python3.10 psi_blast_getmax.py -i seq.fa -o regOut -n maxOut -t maxOutSeqs.fa -k maxOutProtSeqs.fa -a maxOutProtSeqsAligned.fa -r 5 -m 20000 -e 0.05 -b /myData/refSeq/refSeqDB2025Nov/refseq_protein -l "$HOME/apps/ncbi-blast-2.17.0+/bin/psiblast" -c "$HOME/apps/ncbi-blast-2.17.0+/bin/blastdbcmd"
