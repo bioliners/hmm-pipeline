@@ -60,7 +60,7 @@ def initialize(argv):
 	global BLAST_DB_PATH, PSIBLAST, BLASTDBCMD
 	LOGGER.info('Initializing parameters') 
 	try:
-		opts, args = getopt.getopt(argv[1:],"hi:o:n:t:k:a:r:m:e:b:l:c",["input=", "psiblastout=", "psiblast_max_out=", \
+		opts, args = getopt.getopt(argv[1:],"hi:o:n:t:k:a:r:m:e:b:l:c:",["input=", "psiblastout=", "psiblast_max_out=", \
 		"refseqs_out=", "protens_out=", "aligned_out=", "iteration=", "max_target_seq=", "evalue=", "blastdb_path=", \
 		"psiblast=", "blastdbcmd="])
 		if len(opts) == 0:
